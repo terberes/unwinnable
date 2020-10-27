@@ -1,0 +1,23 @@
+// DO NOT FORGET TO EDIT RADIUS
+
+List((
+    // Width of the texture used by the sprite sheet
+    texture_width: 60,
+    // Height of the texture used by the sprite sheet
+    texture_height: 60,
+    // List of sprites the sheet holds
+    sprites: [
+        (
+            // Horizontal position of the sprite in the sprite sheet
+            x: 0,
+            // Vertical position of the sprite in the sprite sheet
+            y: 0,
+            // Width of the sprite
+            width: 60,
+            // Height of the sprite
+            height: 60,
+            // Number of pixels to shift the sprite to the left and down relative to the entity holding it when rendering
+            offsets: Some((0.0, 0.0)), // This is optional and defaults to (0.0, 0.0)
+        )
+    ]
+))

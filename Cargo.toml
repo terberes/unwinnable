@@ -1,0 +1,17 @@
+[package]
+name = "unwinnable"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[dependencies]
+amethyst = "0.15.0"
+sccache = "0.2.13"
+log = "0.4.11"
+maplit = "1.0.2"
+
+[features]
+default = ["vulkan"]
+empty = ["amethyst/empty"]
+metal = ["amethyst/metal"]
+vulkan = ["amethyst/vulkan"]

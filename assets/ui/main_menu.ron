@@ -1,0 +1,157 @@
+
+#![enable(implicit_some)]
+
+Container(
+    transform: (
+        id: "background",
+        anchor: Middle,
+        stretch: XY( x_margin: 0., y_margin: 0., keep_aspect_ratio: false),
+        width: 20.,
+        height: 20.,
+    ),
+    background: SolidColor(0.03, 0.03, 0.03, 1.0),
+    children: [
+        Container(
+            transform: (
+                id: "ball_count_input_container",
+                x: 0,
+                y: 100.,
+                width: 500.,
+                height: 50.,
+                tab_order: 1,
+                anchor: Middle,
+            ),
+            background: SolidColor(0.07, 0.07, 0.07, 1.0),
+            children: [
+                Label(
+                    transform: (
+                        id: "ball_count_input_label",
+                        y: 60,
+                        width: 165.,
+                        height: 30.,
+                        tab_order: 1,
+                        anchor: Middle,
+                    ),
+                    text: (
+                        text: "Ball count",
+                        font: File("fonts/lunchds.ttf", ("TTF", ())),
+                        font_size: 30.,
+                        color: (0.862, 0.847, 0.839, 1.0),
+                        align: BottomRight,
+                    )
+                ),
+                Label(
+                    transform: (
+                        id: "ball_count_input",
+                        width: 600.,
+                        height: 50.,
+                        tab_order: 1,
+                        anchor: Middle,
+                        stretch: XY(x_margin: 0., y_margin: 0., keep_aspect_ratio: false),
+                        mouse_reactive: true,
+                        selectable: 0,
+                    ),
+                    text: (
+                        text: "",
+                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
+                        font_size: 30.,
+                        color: (0.203, 0.607, 0.537, 1.0),
+                        align: Middle,
+                        editable: (
+                            max_length: 2000,
+                            selected_text_color: (0.09, 0.02, 0.25, 1.0),
+                            selected_background_color: (1.0, 0.5, 0.8, 1.0),
+                        ),
+                    )
+                ),
+            ]
+        ),
+        Container(
+            transform: (
+                id: "take_range_input_container",
+                x: 0,
+                y: -100.,
+                width: 500.,
+                height: 50.,
+                tab_order: 1,
+                anchor: Middle,
+            ),
+            background: SolidColor(0.07, 0.07, 0.07, 1.0),
+            children: [
+                Label(
+                    transform: (
+                        id: "take_range_input_label",
+                        y: 60,
+                        width: 716.,
+                        height: 30.,
+                        tab_order: 1,
+                        anchor: Middle,
+                    ),
+                    text: (
+                        text: "How many balls can a player take each round",
+                        font: File("fonts/lunchds.ttf", ("TTF", ())),
+                        font_size: 28.,
+                        color: (0.862, 0.847, 0.839, 1.0),
+                        align: BottomRight,
+                    )
+                ),
+                Label(
+                    transform: (
+                        id: "take_variants_input",
+                        width: 600.,
+                        height: 50.,
+                        tab_order: 1,
+                        anchor: Middle,
+                        stretch: XY(x_margin: 0., y_margin: 0., keep_aspect_ratio: false),
+                        mouse_reactive: true,
+                        selectable: 0,
+                    ),
+                    text: (
+                        text: "",
+                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
+                        font_size: 30.,
+                        color: (0.203, 0.607, 0.537, 1.0),
+                        align: Middle,
+                        editable: (
+                            max_length: 2000,
+                            selected_text_color: (0.09, 0.02, 0.25, 1.0),
+                            selected_background_color: (1.0, 0.5, 0.8, 1.0),
+                        ),
+                    )
+                ),
+            ]
+        ),
+        Container(
+            transform: (
+                id: "container_start",
+                y: -300.,
+                width: 405.,
+                height: 75.,
+                anchor: Middle,
+            ),
+            background: SolidColor(0.780, 0.078, 0.035, 1.0),
+            children: [
+                Button(
+                    transform: (
+                        id: "start",
+                        width: 400.,
+                        height: 70.,
+                        tab_order: 1,
+                        anchor: Middle,
+                        mouse_reactive: true,
+                    ),
+                    button: (
+                        text: "START GAME",
+                        font: File("fonts/vcr_osd_mono.ttf", ("TTF", ())),
+                        font_size: 50.,
+                        normal_text_color: (0.780, 0.078, 0.035, 1.0), // ffa500
+                        normal_image: SolidColor(0., 0., 0., 1.),
+                        hover_image: SolidColor(0.1, 0.1, 0.1, 1.),
+                        press_image: SolidColor(0.15, 0.15, 0.15, 1.),
+                    )
+                ),
+            ]
+        ),
+
+    ],
+)
