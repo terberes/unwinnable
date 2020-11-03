@@ -1,0 +1,36 @@
+#![enable(implicit_some)]
+
+Container(
+    transform: (
+        id: "prompt_root",
+        anchor: BottomMiddle,
+        pivot: BottomMiddle,
+        width: 170.,
+        height: 75.,
+        y: 100,
+        draggable: true
+    ),
+    background: SolidColor(0.03, 0.03, 0.03, 1.0),
+    children: [
+        Button(
+            transform: (
+                id: "prompt_btn",
+                width: 170.,
+                height: 55.,
+                tab_order: 1,
+                anchor: BottomMiddle,
+                pivot: BottomMiddle,
+                mouse_reactive: true,
+            ),
+            button: (
+                text: "Take",
+                font: File("fonts/square.ttf", ("TTF", ())),
+                font_size: 30.,
+                normal_text_color: (0.780, 0.078, 0.035, 1.0), // ffa500
+                normal_image: SolidColor(0., 0., 0., 1.),
+                hover_image: SolidColor(0.1, 0.1, 0.1, 1.),
+                press_image: SolidColor(0.15, 0.15, 0.15, 1.),
+            )
+        ),
+    ]
+)

@@ -1,32 +1,33 @@
 mod init;
 mod ball;
-mod control;
 mod parse_input;
 mod main_menu;
 mod game;
 mod algorithm;
+mod pause;
 
 use amethyst::{core::transform::TransformBundle, prelude::*, renderer::{
     plugins::{RenderFlat2D, RenderToWindow},
     types::DefaultBackend,
     RenderingBundle,
 }, utils::application_root_dir, LoggerConfig, LogLevelFilter, StdoutLog};
-use crate::ball::Ball;
-use crate::control::BallMouseControl;
-use amethyst::input::{InputBundle, StringBindings};
-use amethyst::ui::{UiCreator, UiBundle, RenderUi};
-use amethyst::utils::fps_counter::FpsCounterBundle;
-use amethyst::assets::HotReloadBundle;
-use amethyst::renderer::RenderDebugLines;
-use std::collections::HashSet;
-use maplit::hashset;
-use crate::algorithm::calculate_strategy;
 
+use crate::ball::BallMouseControl;
+use amethyst::input::{InputBundle, StringBindings};
+use amethyst::ui::{UiBundle, RenderUi};
+use amethyst::renderer::RenderDebugLines;
+
+pub trait Togglable {
+    fn toggle(&mut self);
+}
+
+impl Togglable for bool {
+    fn toggle(&mut self) {
+        *self = !*self;
+    }
+}
 
 fn main() -> amethyst::Result<()> {
-    // println!("{:?}", calculate_strategy(25, &vec![1, 2, 3, 4]));
-    // return Ok(());
-
     amethyst::start_logger(LoggerConfig {
         level_filter: LogLevelFilter::Info,
         stdout: StdoutLog::Colored,
@@ -70,3 +71,4 @@ fn main() -> amethyst::Result<()> {
 
     Ok(())
 }
+

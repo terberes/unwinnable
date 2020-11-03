@@ -1,6 +1,3 @@
-use std::collections::HashSet;
-use std::io::stdout;
-use std::io::Write;
 
 pub fn calculate_strategy(ball_count: u32, allowed_range: &Vec<u32>) -> Vec<u32> {
     let mut dp = vec![0; ball_count as usize + 1];
@@ -15,5 +12,7 @@ pub fn calculate_strategy(ball_count: u32, allowed_range: &Vec<u32>) -> Vec<u32>
             }
         }
     };
+    dp.remove(0);
+    dp.reverse();
     dp
 }

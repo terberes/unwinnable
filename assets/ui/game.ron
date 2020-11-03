@@ -1,0 +1,106 @@
+#![enable(implicit_some)]
+Container (
+    transform: (
+        id: "game_ui_root",
+        stretch: XY(x_margin: 0, y_margin: 0, keep_aspect_ratio: false)
+    ),
+    children: [
+        Container(
+            transform: (
+                id: "ui_background",
+                anchor: MiddleRight,
+                stretch: Y(y_margin: 0., keep_aspect_ratio: false),
+                pivot: MiddleRight,
+                width: 435., // CHANGE IF CHANGING WINDOW SIZE
+            ),
+
+            background: SolidColor(0.0, 0.0, 0.0, 0.5),
+
+            children: [
+                Label(
+                    transform: (
+                        id: "turn_label",
+                        stretch: X(x_margin: 10., keep_aspect_ratio: false),
+                        height: 50.,
+                        tab_order: 1,
+                        anchor: TopMiddle,
+                        pivot: TopMiddle,
+                        y: -20.,
+                    ),
+                    text: (
+                        text: "Loading..",
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 40.,
+                        color: (0.858, 0.792, 0.352, 1.0),
+                        align: Middle,
+                    )
+                ),
+                Label(
+                    transform: (
+                        id: "ball_count_label",
+                        stretch: X(x_margin: 10., keep_aspect_ratio: false),
+                        height: 50.,
+                        tab_order: 1,
+                        anchor: TopMiddle,
+                        pivot: TopMiddle,
+                        y: -90.,
+                    ),
+                    text: (
+                        text: "0 balls left",
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 40.,
+                        color: (0.439, 0.745, 0.454, 1.0),
+                        align: Middle,
+                    )
+                ),
+                Label(
+                    transform: (
+                        id: "history_label",
+                        y: -160,
+                        stretch: XY(x_margin: 10., y_margin: 0., keep_aspect_ratio: false),
+                        tab_order: 1,
+                        anchor: TopMiddle,
+                        pivot: TopMiddle,
+                    ),
+                    text: (
+                        text: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14",
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 35.,
+                        color: (0.439, 0.745, 0.454, 1.0),
+                        line_mode: Wrap,
+                        align: TopLeft,
+                    )
+                ),
+            ],
+        ),
+        Container(
+            transform: (
+                id: "game_area_background",
+                anchor: MiddleLeft,
+                stretch: Y(y_margin: 0., keep_aspect_ratio: false),
+                pivot: MiddleLeft,
+                width: 435., // CHANGE IF CHANGING WINDOW SIZE
+            ),
+            background: SolidColor(1.0, 1.0, 1.0, 0.5),
+            children: [
+                Label(
+                    transform: (
+                        id: "take_error_label",
+                        stretch: X(x_margin: 50., keep_aspect_ratio: false),
+                        tab_order: 1,
+                        y: 20,
+                        anchor: TopMiddle,
+                        pivot: TopMiddle,
+                    ),
+                    text: (
+                        text: "Error 0x00000000000000",
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 35.,
+                        color: (0.439, 0.745, 0.454, 1.0),
+                        align: Middle,
+                    )
+                )
+            ]
+        )
+    ]
+)

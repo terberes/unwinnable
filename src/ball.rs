@@ -1,12 +1,18 @@
-use amethyst::core::ecs::{Component, DenseVecStorage};
+use amethyst::core::ecs::{Component, DenseVecStorage, Entity, Write};
 use amethyst::prelude::*;
-use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, ImageFormat, SpriteSheetFormat, Sprite};
+use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, ImageFormat, Sprite};
 use amethyst::core::Transform;
 use amethyst::assets::{Handle, AssetStorage, Loader};
-use amethyst::window::ScreenDimensions;
+use amethyst::core::ecs::{System, Read, WriteStorage, ReadExpect, ReadStorage};
+use amethyst::input::{InputHandler, StringBindings};
+use amethyst::core::math::{distance, Point2};
+use amethyst::core::ecs::Join;
 use amethyst::renderer::resources::Tint;
+use amethyst::window::ScreenDimensions;
+use amethyst::renderer::rendy::wsi::winit::MouseButton;
+use std::ops::Deref;
+use crate::Togglable;
 use amethyst::renderer::palette::Srgba;
-use amethyst::core::math::Vector3;
 
 #[derive(Clone)]
 pub struct BallSprite {
@@ -17,12 +23,13 @@ pub struct BallSprite {
 #[derive(Default, Debug)]
 pub struct Ball {
     pub radius: f32,
-    pub hovered: bool,
+    pub recently_toggled: bool,
+    pub selected: bool,
 }
 
 impl Ball {
     pub fn new(radius: f32) -> Ball {
-        Ball { radius, hovered: false }
+        Ball { radius, ..Default::default() }
     }
 }
 
@@ -30,13 +37,18 @@ impl Component for Ball {
     type Storage = DenseVecStorage<Self>;
 }
 
-pub fn create_ball(world: &mut World, radius: f32, x: f32, y: f32) {
+pub fn create_ball(world: &mut World, radius: f32, x: f32, y: f32) -> Entity {
     let sprite = load_sprite(world, radius);
-    initialise_ball(world, sprite, radius, x, y);
+    initialise_ball(world, sprite, radius, x, y)
 }
 
+pub fn remove_cached_sprite(world: &mut World) {
+    world.insert::<Option<BallSprite>>(None);
+}
+
+
 fn initialise_ball(world: &mut World, sprite_sheet_handle: Handle<SpriteSheet>,
-                   radius: f32, x: f32, y: f32) {
+                   radius: f32, x: f32, y: f32) -> Entity {
     // Create the translation.
     let mut local_transform = Transform::default();
     local_transform.set_translation_xyz(x, y, 0.0);
@@ -53,7 +65,7 @@ fn initialise_ball(world: &mut World, sprite_sheet_handle: Handle<SpriteSheet>,
         .with(tint)
         .with(Ball::new(radius))
         .with(local_transform)
-        .build();
+        .build()
 }
 // fn initialize_ball(world: &mut World) { // as UiImage
 //
@@ -62,50 +74,135 @@ fn initialise_ball(world: &mut World, sprite_sheet_handle: Handle<SpriteSheet>,
 fn load_sprite(world: &mut World, ball_radius: f32) -> Handle<SpriteSheet> {
     let diameter = (ball_radius * 2.0).floor() as u32;
 
-    if world.has_value::<BallSprite>() {
-        world.fetch::<BallSprite>().sprite.clone()
-    } else {
-        let texture_handle = {
-            let loader = world.read_resource::<Loader>();
-            let texture_storage =
-                world.read_resource::<AssetStorage<Texture>>();
-            loader.load(
-                "sprites/ball.png",
-                ImageFormat::default(),
-                (),
-                &texture_storage,
-            )
-        };
+    if world.has_value::<Option<BallSprite>>() {
         let sprite =
-            load_sprite_sheet(texture_handle, diameter, diameter);
-        let mut sprite_sheet_store =
-            world.fetch_mut::<AssetStorage<SpriteSheet>>();
-        let s = sprite_sheet_store.insert(sprite.clone());
-        drop(sprite_sheet_store);
-        world.insert(BallSprite {
-            sprite: s.clone()
-        });
-        s
+            world.fetch::<Option<BallSprite>>().as_ref().cloned();
+        if sprite.is_some() {
+            return sprite.unwrap().sprite;
+        }
     }
+    let s = load_sprite_sheet(world, diameter);
+    world.insert(Some(BallSprite {
+        sprite: s.clone()
+    }));
+    s
 }
 
 
-fn load_sprite_sheet(texture: Handle<Texture>, width: u32, height: u32) -> SpriteSheet {
-    let image_w = width;
-    let image_h = height;
-    let sprite_w = width;
-    let sprite_h = height;
-
+fn load_sprite_sheet(world: &mut World, diameter: u32)
+                     -> Handle<SpriteSheet> {
+    log::info!("Loading spritesheet");
     let offset_x = 0;
     let offset_y = 0;
     let offsets = [0.0, 0.0];
 
     let sprite = Sprite::from_pixel_values(
-        image_w, image_h, sprite_w, sprite_h, offset_x,
-        offset_y, offsets, false, false,
+        diameter, diameter,
+        diameter, diameter,
+        offset_x, offset_y, offsets,
+        false, false,
     );
-    SpriteSheet {
+    let texture = {
+        let loader = world.read_resource::<Loader>();
+        let texture_storage =
+            world.read_resource::<AssetStorage<Texture>>();
+        loader.load(
+            "sprites/ball.png",
+            ImageFormat::default(),
+            (),
+            &texture_storage,
+        )
+    };
+    let sheet = SpriteSheet {
         texture,
         sprites: vec![sprite],
+    };
+    let mut sprite_sheet_store =
+        world.fetch_mut::<AssetStorage<SpriteSheet>>();
+    sprite_sheet_store.insert(sheet)
+}
+
+pub struct CurrentGame {
+    pub can_select_balls: bool,
+    pub balls_selected: u32,
+    pub balls_selected_max: u32,
+}
+
+pub struct BallMouseControl;
+
+impl<'s> System<'s> for BallMouseControl {
+    type SystemData = (
+        Read<'s, InputHandler<StringBindings>>,
+        Write<'s, Option<CurrentGame>>,
+        ReadExpect<'s, ScreenDimensions>,
+        WriteStorage<'s, Transform>,
+        WriteStorage<'s, Ball>,
+        WriteStorage<'s, Tint>
+    );
+
+    fn run(&mut self, (input, mut game_state, screen,
+        mut transforms, mut balls, mut tints): Self::SystemData) {
+
+        if let Some(state) = game_state.as_mut() {
+
+            for (mut ball, mut trans, tint) in
+            (&mut balls, &mut transforms, &mut tints).join() {
+
+                if let Some((x, y)) = input.mouse_position() {
+
+                    let mouse = Point2::new(x, screen.height() - y);
+                    let ball_pos = Point2::new(trans.translation().x,
+                                               trans.translation().y);
+                    if distance(&mouse, &ball_pos) <= ball.radius {
+                        let button_down =
+                            input.mouse_button_is_down(MouseButton::Left);
+
+                        if button_down
+                            && !ball.recently_toggled
+                            && state.can_select_balls
+                            && (state.balls_selected < state.balls_selected_max || ball.selected) {
+                            ball.selected.toggle();
+                            if ball.selected {
+                                state.balls_selected += 1;
+                            } else {
+                                state.balls_selected -= 1;
+                            }
+                            ball.recently_toggled = true;
+                        } else if !button_down {
+                            ball.recently_toggled = false;
+                        }
+
+                        // Colors on hover
+                        if ball.selected {
+                            tint.0.blue = 1.2;
+                            tint.0.red = 1.2;
+                            tint.0.green = 1.5;
+                            // tint.0.green = 0.5;
+                            // tint.0.alpha = 1.5;
+                        } else {
+                            // tint.0.blue = 0.5;
+                            // tint.0.green = 0.5;
+                            // tint.0.alpha = 1.5;
+                            tint.0.red = 1.3;
+                            tint.0.blue = 1.3;
+                            tint.0.green = 1.3;
+                        }
+                    } else {
+                        // Colors in idle
+                        if ball.selected {
+                            tint.0.red = 0.6;
+                            tint.0.green = 1.0;
+                            tint.0.blue = 0.6;
+                            // tint.0.alpha = 1.0;
+                        } else {
+                            tint.0.red = 1.0;
+                            tint.0.green = 1.0;
+                            tint.0.blue = 1.0;
+                            // tint.0.alpha = 1.0;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
