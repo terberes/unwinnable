@@ -7,13 +7,14 @@ use crate::algorithm::calculate_strategy;
 use amethyst::input::{is_close_requested, is_key_down, VirtualKeyCode, StringBindings, InputEvent};
 use crate::pause::PauseMenuState;
 use amethyst::ecs::Entity;
-use amethyst::ui::{UiCreator, UiFinder, UiText, UiEvent, UiEventType};
+use amethyst::ui::{UiCreator, UiFinder, UiText, UiEvent, UiEventType, UiTransform};
 use amethyst::core::math::{Point2, Point3, Vector3};
 use amethyst::renderer::palette::Srgba;
 use crate::Togglable;
-use amethyst::core::Transform;
+use amethyst::core::{Transform, HiddenPropagate};
 use amethyst::core::alga::general::SubsetOf;
 use std::ops::Add;
+use std::thread::spawn;
 
 
 pub const BALL_RADIUS: f32 = 50.0;
@@ -26,6 +27,7 @@ const TAKE_BUTTON: &str = "take_button";
 const TURN_LABEL: &str = "turn_label";
 const HISTORY_LABEL: &str = "history_label";
 const PROMPT_ROOT: &str = "prompt_root";
+const ERROR_LABEL: &str = "error_label";
 
 const PLAYER_TURN_TEXT: &str = "Your turn";
 const COMPUTER_TURN_TEXT: &str = "Wait...";
@@ -43,7 +45,6 @@ pub struct GameRules {
 pub struct Game {
     pub rules: GameRules,
     pub strategy: Vec<u32>,
-    current_ball_count: u32,
     position: u32,
     player_turn: bool,
     balls: Vec<Entity>,
@@ -53,6 +54,7 @@ pub struct Game {
     history_label: Option<Entity>,
     prompt_root: Option<Entity>,
     take_button: Option<Entity>,
+    error_label: Option<Entity>,
 }
 
 impl Game {
@@ -73,7 +75,7 @@ impl Game {
 
     fn begin_game(&mut self, world: &mut World) {
         // Если первый ход проигрышный, то ходит игрок
-        self.player_turn = self.strategy[0] == 0;
+        self.player_turn = *self.strategy.last().unwrap() == 0;
 
         let state = CurrentGame {
             can_select_balls: self.player_turn,
@@ -83,26 +85,88 @@ impl Game {
 
         world.insert(Some(state));
 
-        dbg!(&self.rules);
-        dbg!(&self.strategy);
-        dbg!(self.player_turn);
-        self.perform_step(world);
+        // dbg!(&self.rules);
+        // dbg!(&self.strategy);
+        // dbg!(self.player_turn);
+
+        self.update_prompt(world);
     }
 
-    fn next_step(&mut self, world: &mut World) {
+    fn next_turn(&mut self, world: &mut World) {
+        log::info!("Performing a step");
+        {
+            // self.balls.retain(|&x| x != i);
+            let selected_balls: Vec<usize> = {
+                let mut ball_storage = world.read_storage::<Ball>();
+                self.balls.iter()
+                    .enumerate()
+                    .filter_map(|(i, &b)|
+                        ball_storage.get(b).map(|b| (i, b)))
+                    .filter(|(_, b)| b.selected)
+                    .map(|(i, _)| i)
+                    .collect()
+            };
+            if self.rules.allowed_take_variants.contains(&(selected_balls.len() as u32)) {
+                dbg!(&selected_balls);
+                dbg!(&self.position);
+                self.position -= selected_balls.len() as u32;
+                self.player_turn.toggle();
+                for i in selected_balls {
+                    log::info!("Removing ball {}", i);
+                    let ball = self.balls.remove(i);
+                    world.delete_entity(ball);
+                }
+                self.update_turn_ui(world);
+                self.update_prompt(world);
+            } else {
+                let mut txt_store = world.write_storage::<UiText>();
+                self.error_label
+                    .and_then(|l| txt_store.get_mut(l))
+                    .map(|t| t.text = "Invalid selection".into());
+            }
+        }
+    }
+
+    fn perform_computed_turn(&mut self, world: &mut World) {
+        let balls_to_take = self.strategy[(self.position as usize) - 1];
+
+        self.position -= balls_to_take;
         self.player_turn.toggle();
-        self.perform_step(world);
+        for i in 0..balls_to_take {
+            log::info!("Removing ball {}", i);
+            let ball = self.balls.pop();
+            ball.map(|b| world.delete_entity(b));
+        }
+        self.update_turn_ui(world);
+        self.update_prompt(world);
     }
 
-    fn perform_step(&mut self, world: &mut World) {
+    fn update_turn_ui(&mut self, world: &mut World) {
+        self.set_turn_label(world);
+        self.set_ball_count_label(world);
+    }
+
+    fn update_prompt(&mut self, world: &mut World) {
         if self.player_turn {
-            self.prompt_root = Some(
-                world.exec(|mut c: UiCreator|
-                    c.create("ui/prompt.ron", ())))
-        } else {
-            self.prompt_root
-                .map(|r| world.delete_entity(r));
-            self.prompt_root = None;
+            if self.prompt_root.is_none() {
+                self.prompt_root = Some(
+                    world.exec(|mut c: UiCreator|
+                        c.create("ui/prompt.ron", ())))
+            }
+            let mut hide_store =
+                world.write_storage::<HiddenPropagate>();
+            if hide_store.contains(self.prompt_root.unwrap()) {
+                hide_store.remove(self.prompt_root.unwrap());
+            }
+        } else if let Some(pr) = self.prompt_root {
+            // self.prompt_root
+            //     .map(|r| world.delete_entity(r));
+            // self.prompt_root = None;
+            let mut hide_store =
+                world.write_storage::<HiddenPropagate>();
+            if !hide_store.contains(pr) {
+                hide_store.insert(pr, HiddenPropagate::new());
+            }
         }
     }
 
@@ -119,37 +183,11 @@ impl Game {
     }
 
     fn set_ball_count_label(&mut self, world: &mut World) {
-        dbg!(&self.ball_count_label);
         let mut ui_text_storage = world.write_storage::<UiText>();
         self.ball_count_label
             .and_then(|l| ui_text_storage.get_mut(l))
-            .map(|text| text.text = dbg!(self.current_ball_count)
+            .map(|text| text.text = self.position
                 .to_string().add(BALL_COUNT_LABEL_SUFFIX));
-    }
-
-    fn do_turn(&mut self, world: &mut World) {
-        let mut ball_storage = world.read_storage::<Ball>();
-        // for i in self.balls {
-        //     if let Some(ball) = ball_storage.get_mut(i) {
-        //
-        //     } else {
-        //         self.balls.retain(|&x| x != i);
-        //     }
-        // }
-        let balls_selected = self.balls.iter()
-            .filter_map(|&b| ball_storage.get(b))
-            .filter(|&b| b.selected)
-            .count();
-
-        if self.rules.allowed_take_variants.contains(&(balls_selected as u32)) {
-            //TODO
-        } else {
-
-        }
-    }
-
-    fn perform_turn_internal(&mut self, world: &mut World, count: u32) {
-        //TODO
     }
 }
 
@@ -170,28 +208,28 @@ impl SimpleState for Game {
         });
 
         let ball_count = self.rules.ball_count;
-        self.current_ball_count = ball_count;
+        self.position = ball_count;
 
         let screen = (*data.world.read_resource::<ScreenDimensions>()).clone();
         let game_area_center = screen.width() as f32 / 3.0;
 
 
-        let mut lines = DebugLinesComponent::with_capacity(100);
-        lines.add_rectangle_2d(
-            Point2::new(0.0, 0.0),
-            Point2::new(screen.width() / 3.0 * 2.0, screen.height()),
-            0.0,
-            Srgba::new(1.0, 0.0, 0.0, 1.0),
-        );
-        lines.add_line(
-            Point3::new(game_area_center, screen.height(), 0.0),
-            Point3::new(game_area_center, 0.0, 0.0),
-            Srgba::new(0.0, 1.0, 0.0, 1.0));
-        data.world.register::<DebugLinesComponent>();
-        data.world
-            .create_entity()
-            .with(lines)
-            .build();
+        // let mut lines = DebugLinesComponent::with_capacity(100);
+        // lines.add_rectangle_2d(
+        //     Point2::new(0.0, 0.0),
+        //     Point2::new(screen.width() / 3.0 * 2.0, screen.height()),
+        //     0.0,
+        //     Srgba::new(1.0, 0.0, 0.0, 1.0),
+        // );
+        // lines.add_line(
+        //     Point3::new(game_area_center, screen.height(), 0.0),
+        //     Point3::new(game_area_center, 0.0, 0.0),
+        //     Srgba::new(0.0, 1.0, 0.0, 1.0));
+        // data.world.register::<DebugLinesComponent>();
+        // data.world
+        //     .create_entity()
+        //     .with(lines)
+        //     .build();
 
         assert!(ball_count <= MAX_BALLS);
         let row_count = get_row(ball_count as f32).ceil() as u32;
@@ -273,17 +311,33 @@ impl SimpleState for Game {
             //    Trans::None
             // }
             StateEvent::Ui(UiEvent {
-                               event_type: UiEventType::Dragging { offset_from_mouse, .. },
+                               event_type: ev,
                                target
                            }) => {
-                if Some(*target) == self.take_button {
-                    let mut transforms =
-                        data.world.write_storage::<Transform>();
-                    transforms.get_mut(self.prompt_root.unwrap())
-                        .map(|t|
-                            t.prepend_translation(
-                                Vector3::new(offset_from_mouse.x,
-                                             offset_from_mouse.y, 0.0)));
+                match ev {
+                    UiEventType::Dragging { offset_from_mouse, .. } => {
+                        if Some(*target) == self.take_button {
+                            let mut transforms =
+                                data.world.write_storage::<Transform>();
+                            transforms.get_mut(self.prompt_root.unwrap())
+                                .map(|t|
+                                    t.prepend_translation(
+                                        Vector3::new(offset_from_mouse.x,
+                                                     offset_from_mouse.y, 0.0)));
+                        }
+                    }
+                    UiEventType::ClickStart => {
+                        let mut txt_store = data.world.write_storage::<UiText>();
+                        self.error_label
+                            .and_then(|e| txt_store.get_mut(e))
+                            .map(|t| t.text = String::new());
+                    }
+                    UiEventType::Click => {
+                        if Some(*target) == self.take_button {
+                            self.next_turn(data.world);
+                        }
+                    }
+                    _ => {}
                 }
                 Trans::None
             }
@@ -294,16 +348,18 @@ impl SimpleState for Game {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         if self.ball_count_label.is_none()
             || self.history_label.is_none()
-            || self.turn_label.is_none() {
+            || self.turn_label.is_none()
+            || self.error_label.is_none() {
             data.world.exec(|f: UiFinder| {
                 self.ball_count_label = f.find(BALL_COUNT_LABEL);
                 self.history_label = f.find(HISTORY_LABEL);
                 self.turn_label = f.find(TURN_LABEL);
+                self.error_label = f.find(ERROR_LABEL);
             });
-            self.set_turn_label(data.world);
-            self.set_ball_count_label(data.world);
+            self.update_turn_ui(data.world);
         }
-        if self.player_turn && self.prompt_root.is_none() {
+        if self.player_turn
+            && (self.prompt_root.is_none() || self.take_button.is_none()) {
             // log::info!("Creating prompt");
             data.world.exec(|f: UiFinder| {
                 self.prompt_root = f.find(PROMPT_ROOT);
@@ -315,6 +371,11 @@ impl SimpleState for Game {
             self.prompt_root = None;
             self.take_button = None;
         }
+
+        if !self.player_turn {
+            self.perform_computed_turn(data.world);
+        }
+
         Trans::None
     }
 }

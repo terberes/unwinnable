@@ -2,7 +2,10 @@
 Container (
     transform: (
         id: "game_ui_root",
-        stretch: XY(x_margin: 0, y_margin: 0, keep_aspect_ratio: false)
+        stretch: XY(x_margin: 0, y_margin: 0, keep_aspect_ratio: false),
+        opaque: false,
+        mouse_reactive: true,
+        transparent_target: true
     ),
     children: [
         Container(
@@ -12,6 +15,7 @@ Container (
                 stretch: Y(y_margin: 0., keep_aspect_ratio: false),
                 pivot: MiddleRight,
                 width: 435., // CHANGE IF CHANGING WINDOW SIZE
+                opaque: false,
             ),
 
             background: SolidColor(0.0, 0.0, 0.0, 0.5),
@@ -79,24 +83,26 @@ Container (
                 anchor: MiddleLeft,
                 stretch: Y(y_margin: 0., keep_aspect_ratio: false),
                 pivot: MiddleLeft,
-                width: 435., // CHANGE IF CHANGING WINDOW SIZE
+                width: 865., // CHANGE IF CHANGING WINDOW SIZE
+                mouse_reactive: false,
+                opaque: false,
             ),
-            background: SolidColor(1.0, 1.0, 1.0, 0.5),
             children: [
                 Label(
                     transform: (
-                        id: "take_error_label",
-                        stretch: X(x_margin: 50., keep_aspect_ratio: false),
+                        id: "error_label",
+                        stretch: X(x_margin: 20., keep_aspect_ratio: false),
                         tab_order: 1,
-                        y: 20,
+                        y: -20,
+                        height: 30,
                         anchor: TopMiddle,
                         pivot: TopMiddle,
                     ),
                     text: (
-                        text: "Error 0x00000000000000",
+                        text: "",
                         font: File("fonts/square.ttf", ("TTF", ())),
                         font_size: 35.,
-                        color: (0.439, 0.745, 0.454, 1.0),
+                        color: (0.780, 0.078, 0.035, 0.85),
                         align: Middle,
                     )
                 )

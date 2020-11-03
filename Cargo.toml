@@ -5,11 +5,11 @@ authors = []
 edition = "2018"
 
 [dependencies]
-amethyst = "0.15.0"
-sccache = "0.2.13"
+amethyst = "0.15.3"
 log = "0.4.11"
 maplit = "1.0.2"
 Inflector = "0.11.4"
+specs-physics = "0.3.0"
 
 [features]
 default = ["vulkan"]

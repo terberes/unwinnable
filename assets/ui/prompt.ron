@@ -8,13 +8,14 @@ Container(
         width: 170.,
         height: 75.,
         y: 100,
-        draggable: true
+        draggable: true,
+        mouse_reactive: true,
     ),
     background: SolidColor(0.03, 0.03, 0.03, 1.0),
     children: [
         Button(
             transform: (
-                id: "prompt_btn",
+                id: "take_button",
                 width: 170.,
                 height: 55.,
                 tab_order: 1,

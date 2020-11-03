@@ -13,6 +13,9 @@ use amethyst::renderer::rendy::wsi::winit::MouseButton;
 use std::ops::Deref;
 use crate::Togglable;
 use amethyst::renderer::palette::Srgba;
+use specs_physics::{PhysicsBodyBuilder, PhysicsColliderBuilder};
+use specs_physics::nphysics::object::BodyStatus;
+use specs_physics::colliders::Shape;
 
 #[derive(Clone)]
 pub struct BallSprite {
@@ -142,14 +145,10 @@ impl<'s> System<'s> for BallMouseControl {
 
     fn run(&mut self, (input, mut game_state, screen,
         mut transforms, mut balls, mut tints): Self::SystemData) {
-
         if let Some(state) = game_state.as_mut() {
-
             for (mut ball, mut trans, tint) in
             (&mut balls, &mut transforms, &mut tints).join() {
-
                 if let Some((x, y)) = input.mouse_position() {
-
                     let mouse = Point2::new(x, screen.height() - y);
                     let ball_pos = Point2::new(trans.translation().x,
                                                trans.translation().y);

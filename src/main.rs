@@ -16,6 +16,8 @@ use crate::ball::BallMouseControl;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::ui::{UiBundle, RenderUi};
 use amethyst::renderer::RenderDebugLines;
+use specs_physics::{physics_dispatcher, register_physics_systems};
+use specs_physics::systems::{SyncBodiesToPhysicsSystem, SyncCollidersToPhysicsSystem, PhysicsStepperSystem, SyncParametersToPhysicsSystem, SyncBodiesFromPhysicsSystem};
 
 pub trait Togglable {
     fn toggle(&mut self);
@@ -41,7 +43,6 @@ fn main() -> amethyst::Result<()> {
         app_root.pop();
         app_root.pop();
     }
-
 
     let assets_dir = app_root.join("assets");
     let config_dir = app_root.join("config");

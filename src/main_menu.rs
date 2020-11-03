@@ -147,6 +147,8 @@ impl MainMenu {
 
         if range.contains(&ball_count) {
             Err("Cannot win in one turn".into())
+        } else if range.contains(&0) {
+            Err("Range cannot contain 0".into())
         } else if ball_count > crate::game::MAX_BALLS {
             Err("Too many balls".into())
         } else if ball_count < crate::game::MIN_BALLS {

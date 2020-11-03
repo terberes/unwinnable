@@ -13,6 +13,6 @@ pub fn calculate_strategy(ball_count: u32, allowed_range: &Vec<u32>) -> Vec<u32>
         }
     };
     dp.remove(0);
-    dp.reverse();
+    // dp.reverse();
     dp
 }
