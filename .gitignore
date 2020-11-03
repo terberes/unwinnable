@@ -7,3 +7,7 @@ thumbs.db
 *~
 *.rs.bk
 *.swp
+
+# IDE
+.vscode
+.idea
