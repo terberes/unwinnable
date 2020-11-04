@@ -20,7 +20,7 @@ pub fn parse_number_selection(select: &String)
                 return Err("Reverse range is not allowed".into());
             }
 
-            include_range.extend(lower..upper);
+            include_range.extend(lower..=upper);
         } else {
             include_range.push(word.parse()?);
         }

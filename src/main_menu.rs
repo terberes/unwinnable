@@ -2,7 +2,7 @@ use amethyst::{SimpleState, StateData, GameData, StateEvent, SimpleTrans, Trans}
 use log::info;
 use crate::init;
 use crate::game::{Game};
-use amethyst::ui::{UiCreator, UiFinder, UiEventType, UiEvent, UiText, UiButtonBuilder, Anchor};
+use amethyst::ui::{UiCreator, UiFinder, UiEventType, UiEvent, UiText};
 use amethyst::input::is_close_requested;
 use amethyst::core::ecs::{Entity, WorldExt};
 use crate::parse_input::parse_number_selection;

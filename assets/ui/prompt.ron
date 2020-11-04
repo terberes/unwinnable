@@ -3,30 +3,65 @@
 Container(
     transform: (
         id: "prompt_root",
-        anchor: BottomMiddle,
-        pivot: BottomMiddle,
-        width: 170.,
+        anchor: TopMiddle,
+        pivot: TopMiddle,
+        width: 250.,
         height: 75.,
-        y: 100,
-        draggable: true,
-        mouse_reactive: true,
+        y: -100,
+        draggable: true
     ),
     background: SolidColor(0.03, 0.03, 0.03, 1.0),
     children: [
+        Container(
+            transform: (
+                width: 170,
+                height: 55,
+                anchor: BottomLeft,
+                pivot: BottomLeft,
+                opaque: false,
+            ),
+            background: SolidColor(0.07, 0.07, 0.07, 1.0),
+            children: [
+                Label(
+                    transform: (
+                        id: "take_count_input",
+                        width: 160.,
+                        height: 45.,
+                        tab_order: 1,
+                        anchor: MiddleLeft,
+                        pivot: MiddleLeft,
+                        mouse_reactive: true,
+                        selectable: 0,
+                    ),
+                    text: (
+                        text: "",
+                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
+                        font_size: 30.,
+                        color: (0.203, 0.607, 0.537, 1.0),
+                        align: Middle,
+                        editable: (
+                            max_length: 2000,
+                            selected_text_color: (0.09, 0.02, 0.25, 1.0),
+                            selected_background_color: (1.0, 0.5, 0.8, 1.0),
+                        ),
+                    )
+                ),
+            ],
+        ),
         Button(
             transform: (
                 id: "take_button",
-                width: 170.,
+                width: 80.,
                 height: 55.,
                 tab_order: 1,
-                anchor: BottomMiddle,
-                pivot: BottomMiddle,
+                anchor: BottomRight,
+                pivot: BottomRight,
                 mouse_reactive: true,
             ),
             button: (
                 text: "Take",
                 font: File("fonts/square.ttf", ("TTF", ())),
-                font_size: 30.,
+                font_size: 25.,
                 normal_text_color: (0.780, 0.078, 0.035, 1.0), // ffa500
                 normal_image: SolidColor(0., 0., 0., 1.),
                 hover_image: SolidColor(0.1, 0.1, 0.1, 1.),

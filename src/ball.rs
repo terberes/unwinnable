@@ -3,19 +3,19 @@ use amethyst::prelude::*;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, ImageFormat, Sprite};
 use amethyst::core::Transform;
 use amethyst::assets::{Handle, AssetStorage, Loader};
-use amethyst::core::ecs::{System, Read, WriteStorage, ReadExpect, ReadStorage};
+use amethyst::core::ecs::{System, Read, WriteStorage, ReadExpect};
 use amethyst::input::{InputHandler, StringBindings};
-use amethyst::core::math::{distance, Point2};
-use amethyst::core::ecs::Join;
+
+
 use amethyst::renderer::resources::Tint;
 use amethyst::window::ScreenDimensions;
-use amethyst::renderer::rendy::wsi::winit::MouseButton;
-use std::ops::Deref;
-use crate::Togglable;
+
+
+
 use amethyst::renderer::palette::Srgba;
-use specs_physics::{PhysicsBodyBuilder, PhysicsColliderBuilder};
-use specs_physics::nphysics::object::BodyStatus;
-use specs_physics::colliders::Shape;
+
+
+
 
 #[derive(Clone)]
 pub struct BallSprite {
@@ -143,65 +143,65 @@ impl<'s> System<'s> for BallMouseControl {
         WriteStorage<'s, Tint>
     );
 
-    fn run(&mut self, (input, mut game_state, screen,
-        mut transforms, mut balls, mut tints): Self::SystemData) {
-        if let Some(state) = game_state.as_mut() {
-            for (mut ball, mut trans, tint) in
-            (&mut balls, &mut transforms, &mut tints).join() {
-                if let Some((x, y)) = input.mouse_position() {
-                    let mouse = Point2::new(x, screen.height() - y);
-                    let ball_pos = Point2::new(trans.translation().x,
-                                               trans.translation().y);
-                    if distance(&mouse, &ball_pos) <= ball.radius {
-                        let button_down =
-                            input.mouse_button_is_down(MouseButton::Left);
-
-                        if button_down
-                            && !ball.recently_toggled
-                            && state.can_select_balls
-                            && (state.balls_selected < state.balls_selected_max || ball.selected) {
-                            ball.selected.toggle();
-                            if ball.selected {
-                                state.balls_selected += 1;
-                            } else {
-                                state.balls_selected -= 1;
-                            }
-                            ball.recently_toggled = true;
-                        } else if !button_down {
-                            ball.recently_toggled = false;
-                        }
-
-                        // Colors on hover
-                        if ball.selected {
-                            tint.0.blue = 1.2;
-                            tint.0.red = 1.2;
-                            tint.0.green = 1.5;
-                            // tint.0.green = 0.5;
-                            // tint.0.alpha = 1.5;
-                        } else {
-                            // tint.0.blue = 0.5;
-                            // tint.0.green = 0.5;
-                            // tint.0.alpha = 1.5;
-                            tint.0.red = 1.3;
-                            tint.0.blue = 1.3;
-                            tint.0.green = 1.3;
-                        }
-                    } else {
-                        // Colors in idle
-                        if ball.selected {
-                            tint.0.red = 0.6;
-                            tint.0.green = 1.0;
-                            tint.0.blue = 0.6;
-                            // tint.0.alpha = 1.0;
-                        } else {
-                            tint.0.red = 1.0;
-                            tint.0.green = 1.0;
-                            tint.0.blue = 1.0;
-                            // tint.0.alpha = 1.0;
-                        }
-                    }
-                }
-            }
-        }
+    fn run(&mut self, (_input, _game_state, _screen,
+        _transforms, _balls, _tints): Self::SystemData) {
+        // if let Some(state) = game_state.as_mut() {
+        //     for (mut ball, mut trans, tint) in
+        //     (&mut balls, &mut transforms, &mut tints).join() {
+        //         if let Some((x, y)) = input.mouse_position() {
+        //             let mouse = Point2::new(x, screen.height() - y);
+        //             let ball_pos = Point2::new(trans.translation().x,
+        //                                        trans.translation().y);
+        //             if distance(&mouse, &ball_pos) <= ball.radius {
+        //                 let button_down =
+        //                     input.mouse_button_is_down(MouseButton::Left);
+        //
+        //                 if button_down
+        //                     && !ball.recently_toggled
+        //                     && state.can_select_balls
+        //                     && (state.balls_selected < state.balls_selected_max || ball.selected) {
+        //                     ball.selected.toggle();
+        //                     if ball.selected {
+        //                         state.balls_selected += 1;
+        //                     } else {
+        //                         state.balls_selected -= 1;
+        //                     }
+        //                     ball.recently_toggled = true;
+        //                 } else if !button_down {
+        //                     ball.recently_toggled = false;
+        //                 }
+        //
+        //                 // Colors on hover
+        //                 if ball.selected {
+        //                     tint.0.blue = 1.2;
+        //                     tint.0.red = 1.2;
+        //                     tint.0.green = 1.5;
+        //                     // tint.0.green = 0.5;
+        //                     // tint.0.alpha = 1.5;
+        //                 } else {
+        //                     // tint.0.blue = 0.5;
+        //                     // tint.0.green = 0.5;
+        //                     // tint.0.alpha = 1.5;
+        //                     tint.0.red = 1.3;
+        //                     tint.0.blue = 1.3;
+        //                     tint.0.green = 1.3;
+        //                 }
+        //             } else {
+        //                 // Colors in idle
+        //                 if ball.selected {
+        //                     tint.0.red = 0.6;
+        //                     tint.0.green = 1.0;
+        //                     tint.0.blue = 0.6;
+        //                     // tint.0.alpha = 1.0;
+        //                 } else {
+        //                     tint.0.red = 1.0;
+        //                     tint.0.green = 1.0;
+        //                     tint.0.blue = 1.0;
+        //                     // tint.0.alpha = 1.0;
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }

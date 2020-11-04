@@ -16,8 +16,8 @@ use crate::ball::BallMouseControl;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::ui::{UiBundle, RenderUi};
 use amethyst::renderer::RenderDebugLines;
-use specs_physics::{physics_dispatcher, register_physics_systems};
-use specs_physics::systems::{SyncBodiesToPhysicsSystem, SyncCollidersToPhysicsSystem, PhysicsStepperSystem, SyncParametersToPhysicsSystem, SyncBodiesFromPhysicsSystem};
+use amethyst::core::{HideHierarchySystem, HideHierarchySystemDesc};
+
 
 pub trait Togglable {
     fn toggle(&mut self);
@@ -64,7 +64,10 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(UiBundle::<StringBindings>::new())?
         // .with_bundle(HotReloadBundle::default())?
         // .with_bundle(FpsCounterBundle::default())?
-        .with(BallMouseControl, "ball_mouse_control", &["input_system"]);
+        .with(BallMouseControl,
+              "ball_mouse_control", &["input_system"])
+        .with_system_desc(HideHierarchySystemDesc::default(),
+              "hide_hierarchy_system", &["parent_hierarchy_system"]);
 
     let mut game = Application::new(
         assets_dir, main_menu::MainMenu::default(), game_data)?;

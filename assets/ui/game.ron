@@ -67,7 +67,8 @@ Container (
                         pivot: TopMiddle,
                     ),
                     text: (
-                        text: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14",
+                        //text: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14",
+                        text: "",
                         font: File("fonts/square.ttf", ("TTF", ())),
                         font_size: 35.,
                         color: (0.439, 0.745, 0.454, 1.0),

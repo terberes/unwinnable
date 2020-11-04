@@ -11,7 +11,7 @@ use amethyst::ui::{UiCreator, UiFinder, UiText, UiEvent, UiEventType, UiTransfor
 use amethyst::core::math::{Point2, Point3, Vector3};
 use amethyst::renderer::palette::Srgba;
 use crate::Togglable;
-use amethyst::core::{Transform, HiddenPropagate};
+use amethyst::core::{Transform, HiddenPropagate, Time};
 use amethyst::core::alga::general::SubsetOf;
 use std::ops::Add;
 use std::thread::spawn;
@@ -28,12 +28,17 @@ const TURN_LABEL: &str = "turn_label";
 const HISTORY_LABEL: &str = "history_label";
 const PROMPT_ROOT: &str = "prompt_root";
 const ERROR_LABEL: &str = "error_label";
+const TAKE_COUNT_INPUT: &str = "take_count_input";
 
 const PLAYER_TURN_TEXT: &str = "Your turn";
 const COMPUTER_TURN_TEXT: &str = "Wait...";
 const BALL_COUNT_LABEL_SUFFIX: &str = " balls left";
+const PLAYER_HISTORY_PREFIX: &str = "Player - ";
+const COMPUTER_HISTORY_PREFIX: &str = "Computer - ";
 
 const MAX_HISTORY_LINES: u32 = 14;
+
+const COMPUTER_TURN_DURATION: f32 = 0.3;
 
 #[derive(Default, Debug)]
 pub struct GameRules {
@@ -45,6 +50,8 @@ pub struct GameRules {
 pub struct Game {
     pub rules: GameRules,
     pub strategy: Vec<u32>,
+    history_lines: u32,
+    timer: u64,
     position: u32,
     player_turn: bool,
     balls: Vec<Entity>,
@@ -55,6 +62,7 @@ pub struct Game {
     prompt_root: Option<Entity>,
     take_button: Option<Entity>,
     error_label: Option<Entity>,
+    take_count_input: Option<Entity>,
 }
 
 impl Game {
@@ -92,53 +100,89 @@ impl Game {
         self.update_prompt(world);
     }
 
+    // fn next_turn(&mut self, world: &mut World) {
+    //     log::info!("Performing a step");
+    //     {
+    //         // self.balls.retain(|&x| x != i);
+    //         let selected_balls: Vec<usize> = {
+    //             let mut ball_storage = world.read_storage::<Ball>();
+    //             self.balls.iter()
+    //                 .enumerate()
+    //                 .filter_map(|(i, &b)|
+    //                     ball_storage.get(b).map(|b| (i, b)))
+    //                 .filter(|(_, b)| b.selected)
+    //                 .map(|(i, _)| i)
+    //                 .collect()
+    //         };
+    //         if self.rules.allowed_take_variants.contains(&(selected_balls.len() as u32)) {
+    //             dbg!(&selected_balls);
+    //             dbg!(&self.position);
+    //             self.position -= selected_balls.len() as u32;
+    //             self.player_turn.toggle();
+    //             for i in selected_balls {
+    //                 log::info!("Removing ball {}", i);
+    //                 let ball = self.balls.remove(i);
+    //                 world.delete_entity(ball);
+    //             }
+    //             self.update_turn_ui(world);
+    //             self.update_prompt(world);
+    //         } else {
+    //             let mut txt_store = world.write_storage::<UiText>();
+    //             self.error_label
+    //                 .and_then(|l| txt_store.get_mut(l))
+    //                 .map(|t| t.text = "Invalid selection".into());
+    //         }
+    //     }
+    // }
+
     fn next_turn(&mut self, world: &mut World) {
-        log::info!("Performing a step");
-        {
-            // self.balls.retain(|&x| x != i);
-            let selected_balls: Vec<usize> = {
-                let mut ball_storage = world.read_storage::<Ball>();
-                self.balls.iter()
-                    .enumerate()
-                    .filter_map(|(i, &b)|
-                        ball_storage.get(b).map(|b| (i, b)))
-                    .filter(|(_, b)| b.selected)
-                    .map(|(i, _)| i)
-                    .collect()
-            };
-            if self.rules.allowed_take_variants.contains(&(selected_balls.len() as u32)) {
-                dbg!(&selected_balls);
-                dbg!(&self.position);
-                self.position -= selected_balls.len() as u32;
-                self.player_turn.toggle();
-                for i in selected_balls {
-                    log::info!("Removing ball {}", i);
-                    let ball = self.balls.remove(i);
-                    world.delete_entity(ball);
-                }
-                self.update_turn_ui(world);
-                self.update_prompt(world);
-            } else {
-                let mut txt_store = world.write_storage::<UiText>();
-                self.error_label
-                    .and_then(|l| txt_store.get_mut(l))
-                    .map(|t| t.text = "Invalid selection".into());
-            }
+        let balls_to_take = {
+            let mut txt_store = world.write_storage::<UiText>();
+            self.take_count_input
+                .and_then(|e| txt_store.get_mut(e))
+                .and_then(|mut t| {
+                    let n = t.text.parse().ok();
+                    t.text.clear();
+                    n
+                })
+        };
+
+        if balls_to_take.is_some()
+            && self.rules.allowed_take_variants.contains(&balls_to_take.unwrap()) {
+            self.player_turn.toggle();
+            self.take_balls(world, balls_to_take.unwrap());
+            self.add_history_entry(world, true, balls_to_take.unwrap());
+            self.update_turn_ui(world);
+            self.update_prompt(world);
+        } else {
+            let mut txt_store = world.write_storage::<UiText>();
+            self.error_label
+                .and_then(|l| txt_store.get_mut(l))
+                .map(|t| t.text = "Invalid selection".into());
         }
+
+        self.timer = 0;
     }
 
     fn perform_computed_turn(&mut self, world: &mut World) {
+        self.player_turn.toggle();
+
         let balls_to_take = self.strategy[(self.position as usize) - 1];
 
-        self.position -= balls_to_take;
-        self.player_turn.toggle();
-        for i in 0..balls_to_take {
+        self.take_balls(world, balls_to_take);
+        self.add_history_entry(world, false, balls_to_take);
+        self.update_turn_ui(world);
+        self.update_prompt(world);
+        self.timer = 0;
+    }
+
+    fn take_balls(&mut self, world: &mut World, count: u32) {
+        self.position -= count;
+        for i in 0..count {
             log::info!("Removing ball {}", i);
             let ball = self.balls.pop();
             ball.map(|b| world.delete_entity(b));
         }
-        self.update_turn_ui(world);
-        self.update_prompt(world);
     }
 
     fn update_turn_ui(&mut self, world: &mut World) {
@@ -149,14 +193,26 @@ impl Game {
     fn update_prompt(&mut self, world: &mut World) {
         if self.player_turn {
             if self.prompt_root.is_none() {
-                self.prompt_root = Some(
-                    world.exec(|mut c: UiCreator|
-                        c.create("ui/prompt.ron", ())))
+                // self.prompt_root = Some(
+                //     world.exec(|mut c: UiCreator|
+                //         c.create("ui/prompt.ron", ())))
+                self.prompt_root = {
+                    let mut pr =
+                        world.exec(|f: UiFinder| f.find(PROMPT_ROOT));
+                    if pr.is_none() {
+                        pr = Some(
+                            world.exec(|mut c: UiCreator|
+                                c.create("ui/prompt.ron", ())))
+                    }
+                    pr
+                }
             }
-            let mut hide_store =
+            let mut hidden_store =
                 world.write_storage::<HiddenPropagate>();
-            if hide_store.contains(self.prompt_root.unwrap()) {
-                hide_store.remove(self.prompt_root.unwrap());
+            dbg!(self.prompt_root);
+            dbg!(hidden_store.get(self.prompt_root.unwrap()));
+            if hidden_store.contains(self.prompt_root.unwrap()) {
+                hidden_store.remove(self.prompt_root.unwrap());
             }
         } else if let Some(pr) = self.prompt_root {
             // self.prompt_root
@@ -168,6 +224,36 @@ impl Game {
                 hide_store.insert(pr, HiddenPropagate::new());
             }
         }
+    }
+
+    fn add_history_entry(&mut self, world: &mut World, is_player: bool, count: u32) {
+        let mut txt_store = world.write_storage::<UiText>();
+        self.history_label
+            .and_then(|e| txt_store.get_mut(e))
+            .map(|t| {
+                if t.text.len() > 0 {
+                    t.text.push_str("\n");
+                    self.history_lines += 1;
+                }
+                t.text.push_str(if is_player {
+                    PLAYER_HISTORY_PREFIX
+                } else {
+                    COMPUTER_HISTORY_PREFIX
+                });
+                t.text.push_str(count.to_string().as_str());
+                if self.history_lines > MAX_HISTORY_LINES {
+                    let mut chars = t.text.chars();
+                    loop {
+                        if chars.next() == Some('\n') {
+                            break;
+                        }
+                    }
+                    let new_history = chars.as_str().to_string();
+                    drop(chars);
+                    t.text = "...\n".into();
+                    t.text.push_str(new_history.as_str());
+                }
+            });
     }
 
     fn set_turn_label(&mut self, world: &mut World) {
@@ -214,27 +300,27 @@ impl SimpleState for Game {
         let game_area_center = screen.width() as f32 / 3.0;
 
 
-        // let mut lines = DebugLinesComponent::with_capacity(100);
-        // lines.add_rectangle_2d(
-        //     Point2::new(0.0, 0.0),
-        //     Point2::new(screen.width() / 3.0 * 2.0, screen.height()),
-        //     0.0,
-        //     Srgba::new(1.0, 0.0, 0.0, 1.0),
-        // );
-        // lines.add_line(
-        //     Point3::new(game_area_center, screen.height(), 0.0),
-        //     Point3::new(game_area_center, 0.0, 0.0),
-        //     Srgba::new(0.0, 1.0, 0.0, 1.0));
-        // data.world.register::<DebugLinesComponent>();
-        // data.world
-        //     .create_entity()
-        //     .with(lines)
-        //     .build();
+// let mut lines = DebugLinesComponent::with_capacity(100);
+// lines.add_rectangle_2d(
+//     Point2::new(0.0, 0.0),
+//     Point2::new(screen.width() / 3.0 * 2.0, screen.height()),
+//     0.0,
+//     Srgba::new(1.0, 0.0, 0.0, 1.0),
+// );
+// lines.add_line(
+//     Point3::new(game_area_center, screen.height(), 0.0),
+//     Point3::new(game_area_center, 0.0, 0.0),
+//     Srgba::new(0.0, 1.0, 0.0, 1.0));
+// data.world.register::<DebugLinesComponent>();
+// data.world
+//     .create_entity()
+//     .with(lines)
+//     .build();
 
         assert!(ball_count <= MAX_BALLS);
         let row_count = get_row(ball_count as f32).ceil() as u32;
 
-        // Arrangement, not an array
+// Arrangement, not an array
         let mut arr = vec![0u32; row_count as usize];
 
         for _ in 0..ball_count {
@@ -248,7 +334,7 @@ impl SimpleState for Game {
 
         debug_assert_eq!(arr.iter().sum::<u32>(), ball_count);
 
-        // 2 thirds of the screen divided by count of balls in the largest row
+// 2 thirds of the screen divided by count of balls in the largest row
         let ball_space = (screen.width() as f32 / 3.0 * 2.0)
             .min(screen.height() - BALL_PADDING * 8.0) / (row_count as f32);
 
@@ -293,7 +379,6 @@ impl SimpleState for Game {
         data: StateData<'_, GameData<'_, '_>>,
         event: StateEvent,
     ) -> SimpleTrans {
-        // log::info!("Got an event: {:?}", &event);
         match &event {
             StateEvent::Window(event) => {
                 if is_close_requested(&event) {
@@ -306,10 +391,6 @@ impl SimpleState for Game {
                     Trans::None
                 }
             }
-            // StateEvent::Ui(event) => Trans::None, // TODO
-            // StateEvent::Input(input_event) => {
-            //    Trans::None
-            // }
             StateEvent::Ui(UiEvent {
                                event_type: ev,
                                target
@@ -349,31 +430,65 @@ impl SimpleState for Game {
         if self.ball_count_label.is_none()
             || self.history_label.is_none()
             || self.turn_label.is_none()
-            || self.error_label.is_none() {
+            || self.error_label.is_none()
+            || self.prompt_root.is_none()
+            || self.take_button.is_none()
+            || self.take_count_input.is_none() {
             data.world.exec(|f: UiFinder| {
                 self.ball_count_label = f.find(BALL_COUNT_LABEL);
                 self.history_label = f.find(HISTORY_LABEL);
                 self.turn_label = f.find(TURN_LABEL);
                 self.error_label = f.find(ERROR_LABEL);
+                self.prompt_root = f.find(PROMPT_ROOT);
+                self.take_button = f.find(TAKE_BUTTON);
+                self.take_count_input = f.find(TAKE_COUNT_INPUT);
             });
             self.update_turn_ui(data.world);
         }
-        if self.player_turn
-            && (self.prompt_root.is_none() || self.take_button.is_none()) {
-            // log::info!("Creating prompt");
-            data.world.exec(|f: UiFinder| {
-                self.prompt_root = f.find(PROMPT_ROOT);
-                self.take_button = f.find(TAKE_BUTTON);
-            });
-        } else if !self.player_turn && self.prompt_root.is_some() {
-            log::info!("Deleting prompt");
-            data.world.delete_entity(self.prompt_root.unwrap());
-            self.prompt_root = None;
-            self.take_button = None;
+
+        if self.position <= 0 {
+            // TODO
+            println!("Game ended");
+            return Trans::Pop;
         }
 
-        if !self.player_turn {
-            self.perform_computed_turn(data.world);
+        // let mut hidden_store =
+        //     data.world.write_storage::<HiddenPropagate>();
+        //
+        // if self.player_turn
+        //     && (self.prompt_root.is_none() || self.take_button.is_none()) {
+        //     data.world.exec(|f: UiFinder| {
+        //         self.prompt_root = f.find(PROMPT_ROOT);
+        //         self.take_button = f.find(TAKE_BUTTON);
+        //         self.take_count_input = f.find(TAKE_COUNT_INPUT);
+        //     });
+        //     if Some(pr) = self.prompt_root {
+        //         if hidden_store.contains(pr) {
+        //             hidden_store.remove(pr);
+        //         }
+        //     }
+        // } else if !self.player_turn && self.prompt_root.is_some() {
+        //     log::info!("Deleting prompt");
+        //     // data.world.delete_entity(self.prompt_root.unwrap());
+        //
+        //
+        //     self.prompt_root = None;
+        //     self.take_button = None;
+        //     self.take_count_input = None;
+        // }
+
+        Trans::None
+    }
+
+    fn fixed_update(&mut self, data: StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
+        let frame_duration = data.world.fetch::<Time>().fixed_seconds();
+        if !self.player_turn && (self.timer as f32)
+            * frame_duration >= COMPUTER_TURN_DURATION {
+            if self.position > 0 {
+                self.perform_computed_turn(data.world);
+            }
+        } else if !self.player_turn {
+            self.timer += 1;
         }
 
         Trans::None
