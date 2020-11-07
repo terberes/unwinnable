@@ -8,24 +8,22 @@ Container(
         width: 1000.0,
         height: 600.0,
     ),
-    background: SolidColor(0.0, 0.0, 0.0, 1.0),
+    background: SolidColor(0.03, 0.03, 0.03, 1.0),
     children: [
         Label(
             transform: (
                 id: "game_over_label",
-                height: 200.,
+                height: 300.,
                 tab_order: 1,
                 anchor: Middle,
-                stretch: Y(y_margin: 0., keep_aspect_ratio: false),
-                y: 100,
-                mouse_reactive: true,
-                selectable: 0,
+                width: 1000,
+                y: 100
             ),
             text: (
                 text: "GAME OVER!",
                 font: File("fonts/square.ttf", ("TTF", ())),
-                font_size: 100.,
-                color: (0.203, 0.607, 0.537, 1.0),
+                font_size: 150.,
+                color: (0.780, 0.078, 0.035, 1.0),
                 align: Middle,
             )
         ),

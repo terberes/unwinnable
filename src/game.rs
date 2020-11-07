@@ -336,7 +336,7 @@ impl SimpleState for Game {
 
         debug_assert_eq!(arr.iter().sum::<u32>(), ball_count);
 
-// 2 thirds of the screen divided by count of balls in the largest row
+        // 2 thirds of the screen divided by count of balls in the largest row
         let ball_space = (screen.width() as f32 / 3.0 * 2.0)
             .min(screen.height() - BALL_PADDING * 8.0) / (row_count as f32);
 
