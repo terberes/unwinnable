@@ -35,8 +35,8 @@ Container(
                     ),
                     text: (
                         text: "",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 30.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 35.,
                         color: (0.203, 0.607, 0.537, 1.0),
                         align: Middle,
                         editable: (

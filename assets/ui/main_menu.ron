@@ -34,8 +34,8 @@ Container(
                     ),
                     text: (
                         text: "Ball count",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 30.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 32.,
                         color: (0.862, 0.847, 0.839, 1.0),
                         align: Middle
                     )
@@ -53,8 +53,8 @@ Container(
                     ),
                     text: (
                         text: "",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 30.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 32.,
                         color: (0.203, 0.607, 0.537, 1.0),
                         align: Middle,
                         editable: (
@@ -89,8 +89,8 @@ Container(
                     ),
                     text: (
                         text: "How many balls can a player take each round",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 28.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 31.,
                         color: (0.862, 0.847, 0.839, 1.0),
                         align: Middle
                     )
@@ -108,8 +108,8 @@ Container(
                     ),
                     text: (
                         text: "",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 30.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 31.,
                         color: (0.203, 0.607, 0.537, 1.0),
                         align: Middle,
                         editable: (
@@ -143,8 +143,8 @@ Container(
                     ),
                     text: (
                         text: "",
-                        font: File("fonts/ProggyClean.ttf", ("TTF", ())),
-                        font_size: 29.,
+                        font: File("fonts/square.ttf", ("TTF", ())),
+                        font_size: 31.,
                         color: (0.780, 0.078, 0.035, 1.0),
                         align: Middle
                     )

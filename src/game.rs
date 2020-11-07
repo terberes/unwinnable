@@ -178,6 +178,9 @@ impl Game {
     }
 
     fn take_balls(&mut self, world: &mut World, count: u32) {
+        if self.position < count {
+            panic!("Congratulations, you broke the game!")
+        }
         self.position -= count;
         for i in 0..count {
             log::info!("Removing ball {}", i);
@@ -448,7 +451,7 @@ impl SimpleState for Game {
         }
 
         if self.position <= 0 {
-            return Trans::Push(Box::new(GameOver::default()));
+            return Trans::Switch(Box::new(GameOver::default()));
         }
 
         // let mut hidden_store =
