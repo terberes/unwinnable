@@ -30,6 +30,7 @@ Container (
                         anchor: TopMiddle,
                         pivot: TopMiddle,
                         y: -20.,
+                        z: 1.0
                     ),
                     text: (
                         text: "Loading..",
@@ -48,6 +49,7 @@ Container (
                         anchor: TopMiddle,
                         pivot: TopMiddle,
                         y: -90.,
+                        z: 1.0
                     ),
                     text: (
                         text: "0 balls left",

@@ -5,6 +5,7 @@ mod main_menu;
 mod game;
 mod algorithm;
 mod pause;
+mod game_over;
 
 use amethyst::{core::transform::TransformBundle, prelude::*, renderer::{
     plugins::{RenderFlat2D, RenderToWindow},
@@ -17,6 +18,7 @@ use amethyst::input::{InputBundle, StringBindings};
 use amethyst::ui::{UiBundle, RenderUi};
 use amethyst::renderer::RenderDebugLines;
 use amethyst::core::{HideHierarchySystem, HideHierarchySystemDesc};
+use crate::main_menu::MainMenu;
 
 
 pub trait Togglable {
@@ -70,7 +72,7 @@ fn main() -> amethyst::Result<()> {
               "hide_hierarchy_system", &["parent_hierarchy_system"]);
 
     let mut game = Application::new(
-        assets_dir, main_menu::MainMenu::default(), game_data)?;
+        assets_dir, MainMenu::default(), game_data)?;
     game.run();
 
     Ok(())

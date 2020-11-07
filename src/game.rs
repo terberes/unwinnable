@@ -15,6 +15,7 @@ use amethyst::core::{Transform, HiddenPropagate, Time};
 use amethyst::core::alga::general::SubsetOf;
 use std::ops::Add;
 use std::thread::spawn;
+use crate::game_over::GameOver;
 
 
 pub const BALL_RADIUS: f32 = 50.0;
@@ -209,8 +210,6 @@ impl Game {
             }
             let mut hidden_store =
                 world.write_storage::<HiddenPropagate>();
-            dbg!(self.prompt_root);
-            dbg!(hidden_store.get(self.prompt_root.unwrap()));
             if hidden_store.contains(self.prompt_root.unwrap()) {
                 hidden_store.remove(self.prompt_root.unwrap());
             }
@@ -372,6 +371,8 @@ impl SimpleState for Game {
             .map_err(|e| log::error!("Error when deleting balls: {:?}", e));
         self.ui_root.map(|e|
             data.world.delete_entity(e));
+        self.prompt_root.map(|e|
+            data.world.delete_entity(e));
     }
 
     fn handle_event(
@@ -447,9 +448,7 @@ impl SimpleState for Game {
         }
 
         if self.position <= 0 {
-            // TODO
-            println!("Game ended");
-            return Trans::Pop;
+            return Trans::Push(Box::new(GameOver::default()));
         }
 
         // let mut hidden_store =

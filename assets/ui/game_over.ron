@@ -1,0 +1,80 @@
+#![enable(implicit_some)]
+Container(
+    transform: (
+        id: "game_over_screen",
+        anchor: Middle,
+        stretch: XY( x_margin: 0.0, y_margin: 0.0, keep_aspect_ratio: true),
+
+        width: 1000.0,
+        height: 600.0,
+    ),
+    background: SolidColor(0.0, 0.0, 0.0, 1.0),
+    children: [
+        Label(
+            transform: (
+                id: "game_over_label",
+                height: 200.,
+                tab_order: 1,
+                anchor: Middle,
+                stretch: Y(y_margin: 0., keep_aspect_ratio: false),
+                y: 100,
+                mouse_reactive: true,
+                selectable: 0,
+            ),
+            text: (
+                text: "GAME OVER!",
+                font: File("fonts/square.ttf", ("TTF", ())),
+                font_size: 100.,
+                color: (0.203, 0.607, 0.537, 1.0),
+                align: Middle,
+            )
+        ),
+        Button(
+            transform: (
+                id: "exit_to_main_menu",
+                x: 0.0,
+                y: 170.0,
+                z: 2.0,
+                width: 300.0,
+                height: 50.0,
+                anchor: BottomMiddle,
+                pivot: BottomMiddle,
+                mouse_reactive: true,
+            ),
+            button: (
+                text: "Main Menu",
+                font_size: 36.0,
+                normal_image: SolidColor(0.4, 0.4, 0.4, 1.),
+                hover_image: SolidColor(0.5, 0.5, 0.5, 1.),
+                press_image: SolidColor(0.2, 0.2, 0.2, 1.),
+                normal_text_color: (0.2, 0.2, 0.2, 1.0),
+                hover_text_color: (0.7, 0.7, 0.7, 1.0),
+                press_text_color: (1.0, 1.0, 1.0, 1.0),
+            )
+        ),
+
+        Button(
+            transform: (
+                id: "exit",
+                x: 0.0,
+                y: 100.0,
+                z: 2.0,
+                width: 300.0,
+                height: 50.0,
+                anchor: BottomMiddle,
+                pivot: BottomMiddle,
+                mouse_reactive: true,
+            ),
+            button: (
+                text: "Exit",
+                font_size: 36.0,
+                normal_image: SolidColor(0.4, 0.4, 0.4, 1.),
+                hover_image: SolidColor(0.5, 0.5, 0.5, 1.),
+                press_image: SolidColor(0.2, 0.2, 0.2, 1.),
+                normal_text_color: (0.2, 0.2, 0.2, 1.0),
+                hover_text_color: (0.7, 0.7, 0.7, 1.0),
+                press_text_color: (1.0, 1.0, 1.0, 1.0),
+            )
+        ),
+    ]
+)
