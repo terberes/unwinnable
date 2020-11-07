@@ -1,11 +1,8 @@
 use amethyst::{
     ecs::Entity,
-    input::{is_close_requested, is_key_down},
+    input::{is_close_requested},
     prelude::*,
-    shrev::EventChannel,
     ui::{UiCreator, UiEvent, UiEventType, UiFinder},
-    winit::VirtualKeyCode,
-    TransEvent,
 };
 
 use crate::main_menu::MainMenu;
@@ -40,7 +37,7 @@ impl<'a> SimpleState for GameOver {
         self.exit_to_main_menu_button = None;
     }
 
-    fn handle_event(&mut self, data: StateData<GameData>, event: StateEvent) -> SimpleTrans {
+    fn handle_event(&mut self, _data: StateData<GameData>, event: StateEvent) -> SimpleTrans {
         match event {
             StateEvent::Window(event) => {
                 if is_close_requested(&event) {

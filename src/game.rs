@@ -2,19 +2,19 @@ use amethyst::{SimpleState, StateData, GameData};
 use crate::ball::{Ball, remove_cached_sprite, create_ball, CurrentGame};
 use amethyst::prelude::*;
 use amethyst::window::ScreenDimensions;
-use amethyst::renderer::debug_drawing::{DebugLines, DebugLinesParams, DebugLinesComponent};
+use amethyst::renderer::debug_drawing::{DebugLines, DebugLinesParams};
 use crate::algorithm::calculate_strategy;
-use amethyst::input::{is_close_requested, is_key_down, VirtualKeyCode, StringBindings, InputEvent};
+use amethyst::input::{is_close_requested, is_key_down, VirtualKeyCode};
 use crate::pause::PauseMenuState;
 use amethyst::ecs::Entity;
-use amethyst::ui::{UiCreator, UiFinder, UiText, UiEvent, UiEventType, UiTransform};
-use amethyst::core::math::{Point2, Point3, Vector3};
-use amethyst::renderer::palette::Srgba;
+use amethyst::ui::{UiCreator, UiFinder, UiText, UiEvent, UiEventType};
+use amethyst::core::math::{Vector3};
+
 use crate::Togglable;
 use amethyst::core::{Transform, HiddenPropagate, Time};
-use amethyst::core::alga::general::SubsetOf;
+
 use std::ops::Add;
-use std::thread::spawn;
+
 use crate::game_over::GameOver;
 
 
@@ -141,7 +141,7 @@ impl Game {
             let mut txt_store = world.write_storage::<UiText>();
             self.take_count_input
                 .and_then(|e| txt_store.get_mut(e))
-                .and_then(|mut t| {
+                .and_then(|t| {
                     let n = t.text.parse().ok();
                     t.text.clear();
                     n
@@ -223,7 +223,11 @@ impl Game {
             let mut hide_store =
                 world.write_storage::<HiddenPropagate>();
             if !hide_store.contains(pr) {
-                hide_store.insert(pr, HiddenPropagate::new());
+                let e =
+                    hide_store.insert(pr, HiddenPropagate::new());
+                if e.is_err() {
+                    println!("Error inserting the store: {:?}", e)
+                }
             }
         }
     }

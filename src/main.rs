@@ -17,7 +17,7 @@ use crate::ball::BallMouseControl;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::ui::{UiBundle, RenderUi};
 use amethyst::renderer::RenderDebugLines;
-use amethyst::core::{HideHierarchySystem, HideHierarchySystemDesc};
+use amethyst::core::{HideHierarchySystemDesc};
 use crate::main_menu::MainMenu;
 
 
